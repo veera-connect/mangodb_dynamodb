@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f4f8;
+            padding: 30px;
+        }
+
+        .container {
+            background: white;
+            padding: 25px;
+            max-width: 750px;
+            margin: auto;
+            border-radius: 10px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #2563eb;
+            color: white;
+        }
+
+        .delete {
+            background: red;
+        }
+
+        .update {
+            background: green;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #2563eb;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Student Management System mangodb</h2>
+
+    <h3>Add Student</h3>
+
+    <input id="name" placeholder="Student Name">
+    <input id="age" type="number" placeholder="Age">
+
+    <button onclick="addStudent()">Add Student</button>
+
+    <hr>
+
+    <h3>All Students</h3>
+
+    <button onclick="getStudents()">Get All Students</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="studentList"></tbody>
+    </table>
+
+    <p id="message"></p>
+
+</div>
+
+<script>
+
+const API = "http://127.0.0.1:8000/students";
+
+// POST - Add Student
+async function addStudent() {
+
+    let name = document.getElementById("name").value;
+    let age = document.getElementById("age").value;
+
+    if (!name || !age) {
+        alert("Enter name and age");
+        return;
+    }
+
+    let response = await fetch(
+        `${API}?name=${encodeURIComponent(name)}&age=${age}`,
+        { method: "POST" }
+    );
+
+    let data = await response.json();
+
+    document.getElementById("message").innerText = data.message;
+
+    document.getElementById("name").value = "";
+    document.getElementById("age").value = "";
+
+    getStudents();
+}
+
+
+// GET - Display All Students
+async function getStudents() {
+
+    let response = await fetch(API);
+    let students = await response.json();
+
+    let output = "";
+
+    students.forEach(student => {
+
+        output += `
+            <tr>
+                <td>${student.name}</td>
+                <td>${student.age}</td>
+
+                <td>
+                    <button class="update"
+                    onclick="updateStudent('${encodeURIComponent(student.name)}', ${student.age})">
+                    Update
+                    </button>
+
+                    <button class="delete"
+                    onclick="deleteStudent('${encodeURIComponent(student.name)}')">
+                    Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+
+    });
+
+    document.getElementById("studentList").innerHTML = output;
+}
+
+
+// PUT - Update Student
+async function updateStudent(name, oldAge) {
+
+    let newAge = prompt("Enter new age:", oldAge);
+
+    if (newAge === null || newAge.trim() === "") return;
+
+    if (!Number.isInteger(Number(newAge)) || Number(newAge) <= 0) {
+        alert("Enter a valid age");
+        return;
+    }
+
+    let response = await fetch(
+        `${API}/${name}?age=${newAge}`,
+        { method: "PUT" }
+    );
+
+    let data = await response.json();
+
+    document.getElementById("message").innerText = data.message;
+
+    getStudents();
+}
+
+
+// DELETE - Remove Student
+async function deleteStudent(name) {
+
+    if (!confirm("Delete this student?")) return;
+
+    let response = await fetch(
+        `${API}/${name}`,
+        { method: "DELETE" }
+    );
+
+    let data = await response.json();
+
+    document.getElementById("message").innerText = data.message;
+
+    getStudents();
+}
+
+
+// Load students when page opens
+getStudents();
+
+</script>
+
+</body>
+</html>
